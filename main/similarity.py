@@ -57,8 +57,8 @@ class similarities():
         if make_score < 75:
             return {'result': 'TOO FEW INFORMATION'}
         year_narrow = self.target_dict[self.target_dict['year'] == int(year)]
-        model_options = year_narrow[year_narrow['make'] == target_make]['model']
-        if model_options.empty:
+        model_options = set(year_narrow[year_narrow['make'] == target_make]['model'])
+        if len(model_options) == 0:
             return {'result': 'TOO FEW INFORMATION'}
         if target_make == 'B M W':
             main_doc = main_doc.split(' | ')
@@ -66,9 +66,12 @@ class similarities():
             main_doc = ' | '.join(main_doc).upper()
         if target_make == 'MERCEDES-BENZ':
             main_doc = main_doc.split(' | ')
-            main_doc.insert(1, self.model_process(main_doc[1]) + ' CLASS | ' + main_doc[1])
+            model_temp = self.model_process(main_doc[1])
+            if len(model_temp) == 1:
+                model_temp += ' CLASS | '
+                main_doc.insert(1, model_temp  + main_doc[1])
             main_doc = ' | '.join(main_doc).upper()
-        target_model, model_score, _ = self.narrow_search_range(main_doc.split(' | ')[1], model_options)
+        target_model, model_score = self.narrow_search_range(main_doc.split(' | ')[1], model_options)
         if make_score <= 60:
             return {'result': 'TOO FEW INFORMATION'}
         make_narrow = self.target_dict[self.target_dict['make'] == target_make]
@@ -93,7 +96,7 @@ class similarities():
         heuristic_similarities = dict()
         for vss_key, vss_value in vector_space_scores:
             for lds_key, lds_value in levenshtein_distance_scores:
-                if lds_key == vss_key and lds_value > 0.5:
+                if lds_key == vss_key and lds_value > 0.3:
                     heuristic_similarities[lds_key] = (lds_value * 0.8+ vss_value * 0.2)
                     break
         if len(heuristic_similarities.items()) == 0:
