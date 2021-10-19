@@ -4,7 +4,8 @@ from tqdm import tqdm
 from spacy.training.example import Example
 from spacy.scorer import Scorer
 from spacy.util import minibatch, compounding
-
+from spacy.tokenizer import Tokenizer
+from spacy.util import compile_infix_regex
 from thinc.api import SGD
 from thinc.api import decaying
 
@@ -31,8 +32,21 @@ class ner_nlp():
             self.SGD_type = SGD_type
             self.dropout = dropout
             self.nlp = spacy.blank("en")
-            ner = self.nlp.create_pipe("ner")
+            # ner = self.nlp.create_pipe("ner")
             self.nlp.add_pipe('ner')
+        inf = list(self.nlp.Defaults.infixes)
+        inf = [x for x in inf if
+               '-|–|—|--|---|——|~' not in x]  # remove the hyphen-between-letters pattern from infix patterns
+        infix_re = compile_infix_regex(tuple(inf))
+
+        def custom_tokenizer(nlp):
+            return Tokenizer(nlp.vocab, prefix_search=nlp.tokenizer.prefix_search,
+                             suffix_search=nlp.tokenizer.suffix_search,
+                             infix_finditer=infix_re.finditer,
+                             token_match=nlp.tokenizer.token_match,
+                             rules=nlp.Defaults.tokenizer_exceptions)
+
+        self.nlp.tokenizer = custom_tokenizer(self.nlp)
 
     def train(self):
         self.nlp.begin_training()
@@ -52,7 +66,8 @@ class ner_nlp():
         doc = self.nlp(posting)
         prediction = dict()
         for ent in doc.ents:
-            prediction[ent.label_] = ent.text
+            if ent.label_ not in prediction:
+                prediction[ent.label_] = ent.text
         return prediction
 
     def get_score(self, TESTING_DATA):
