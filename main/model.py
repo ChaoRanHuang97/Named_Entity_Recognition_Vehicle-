@@ -25,6 +25,7 @@ class ner_nlp():
 
         if model_path != None:
             self.nlp = spacy.load(model_path)
+            self.nlp.initialize()
         else:
             self.iter = iter
             self.TRAINING_DATA = TRAINING_DATA
@@ -49,6 +50,7 @@ class ner_nlp():
         self.nlp.tokenizer = custom_tokenizer(self.nlp)
 
     def train(self):
+        loss_trend = []
         self.nlp.begin_training()
         for itn in tqdm(range(self.iter)):
             # Shuffle the training data
@@ -60,7 +62,9 @@ class ner_nlp():
                     example = Example.from_dict(doc, annotations)
                     # Update the model
                     self.nlp.update([example], losses=losses, sgd=self.SGD_type, drop=self.dropout)
+            loss_trend.append(losses)
             print(losses)
+        return loss_trend
 
     def detect(self, posting):
         doc = self.nlp(posting)
@@ -81,4 +85,4 @@ class ner_nlp():
         return scorer.score(examples)
 
     def save_model(self, version):
-        self.nlp.to_disk('models/mca-ner-draft_{}.model'.format(version))
+        self.nlp.to_disk('models/mca-ner-{}.model'.format(version))

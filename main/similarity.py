@@ -134,7 +134,7 @@ class similarities():
             result['AVERAGE_CONFIDENCE'] = confidence_avg
             result['STD'] = confidence_std
             return result
-        elif list(similarities.values())[0] < 0.85 and list(similarities.values())[0] > 0.5:
+        elif list(similarities.values())[0] < 0.85 and list(similarities.values())[0] > 0.4:
             result = dict(zip(['MAKE', 'MODEL', 'TRIM'], candidates[0]))
             result['HIGHEST_CONFIDENCE'] = list(similarities.values())[0]
             result['STD'] = confidence_std
@@ -145,3 +145,6 @@ class similarities():
             result['STD'] = confidence_std
             return result
 
+if __name__ == '__main__':
+    from word2number import w2n
+    print(w2n.word_to_num('2 point three'))
